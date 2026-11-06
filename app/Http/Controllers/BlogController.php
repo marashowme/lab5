@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BlogRequest;
 use App\Models\Blog;
 use App\Models\Category;
+use App\Models\Filter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class BlogController extends Controller
 {
@@ -13,7 +15,7 @@ class BlogController extends Controller
     {
         $lang = $request->query('lang', 'uk');
 
-        $blogs = Blog::with(['category', 'author', 'translations' => function ($query) use ($lang) {
+        $blogs = Blog::with(['category', 'author', 'filters', 'translations' => function ($query) use ($lang) {
             // Обрана мова + українська як резервна
             $query->whereIn('locale', [$lang, 'uk']);
         }])->orderByDesc('dt_created')->paginate(6)->withQueryString();
@@ -35,15 +37,22 @@ class BlogController extends Controller
         $categories = Category::orderBy('category_name')
             ->pluck('category_name', 'category_id');
 
-        return view('blog.create', compact('categories'));
+        $filters = Filter::orderBy('filter_name')
+            ->pluck('filter_name', 'filter_id');
+
+        return view('blog.create', compact('categories', 'filters'));
     }
 
     public function store(BlogRequest $request)
     {
+        $data = $request->validated();
+
         $blog = Blog::create([
-            ...$request->validated(),
+            ...Arr::except($data, ['filters']),
             'user_id' => auth()->id(),
         ]);
+
+        $blog->filters()->sync($data['filters'] ?? []);
 
         return redirect()->route('blog.show', $blog);
     }
@@ -52,22 +61,32 @@ class BlogController extends Controller
     {
         $lang = $request->query('lang', 'uk');
 
-        $blog->load(['category', 'author', 'translations']);
+        $blog->load(['category', 'author', 'translations', 'filters']);
 
         return view('blog.show', compact('blog', 'lang'));
     }
 
     public function edit(Blog $blog)
     {
+        $blog->load('filters');
+
         $categories = Category::orderBy('category_name')
             ->pluck('category_name', 'category_id');
 
-        return view('blog.edit', compact('blog', 'categories'));
+        $filters = Filter::orderBy('filter_name')
+            ->pluck('filter_name', 'filter_id');
+
+        $selected = $blog->filters->pluck('filter_id')->all();
+
+        return view('blog.edit', compact('blog', 'categories', 'filters', 'selected'));
     }
 
     public function update(BlogRequest $request, Blog $blog)
     {
-        $blog->update($request->validated());
+        $data = $request->validated();
+
+        $blog->update(Arr::except($data, ['filters']));
+        $blog->filters()->sync($data['filters'] ?? []);
 
         return redirect()->route('blog.show', $blog);
     }

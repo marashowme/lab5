@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -12,6 +13,16 @@ class Product extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(ProductTranslation::class);
+    }
+
+    public function filters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Filter::class,
+            'product_filter',
+            'product_id',
+            'filter_id'
+        );
     }
 
     // Хелпер для отримання назви/опису з урахуванням обраної мови та дефолтної (uk)

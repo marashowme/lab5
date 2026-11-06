@@ -18,6 +18,8 @@ class BlogRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
             'text' => ['nullable', 'string'],
             'category_id' => ['nullable', 'exists:category,category_id'],
+            'filters' => ['sometimes', 'array'],
+            'filters.*' => ['integer', 'distinct', 'exists:filter,filter_id'],
         ];
     }
 }

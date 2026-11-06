@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Blog extends Model
@@ -35,6 +36,16 @@ class Blog extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(BlogTranslation::class, 'blog_id', 'blog_id');
+    }
+
+    public function filters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Filter::class,
+            'blog_filter',
+            'blog_id',
+            'filter_id'
+        );
     }
 
     // Хелпер для отримання локалізованих даних блогу
