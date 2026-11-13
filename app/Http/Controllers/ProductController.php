@@ -3,21 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Filter;
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $lang = $request->query('lang', 'uk');
+        $request->validate([
+            'filter' => ['nullable', 'integer', 'exists:filter,filter_id'],
+        ]);
 
-        $query = Product::with(['translations' => function ($q) use ($lang) {
-            // Завантажуємо обрану мову та українську як резервну
-            $q->whereIn('locale', [$lang, 'uk']);
-        }]);
+        $lang     = $request->query('lang', 'uk');
+        $filterId = $request->query('filter');
 
-        // Пошук по назві в перекладах
+        $query = Product::with([
+            'translations' => function ($q) use ($lang) {
+                $q->whereIn('locale', [$lang, 'uk']);
+            },
+            'filters',
+        ]);
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->whereHas('translations', function ($q) use ($search, $lang) {
@@ -26,23 +34,31 @@ class ProductController extends Controller
             });
         }
 
-        // Сортування за назвою у вибраній мові (з fallback на uk)
+        $query->when($filterId, function ($q) use ($filterId) {
+            $q->whereHas('filters', function ($f) use ($filterId) {
+                $f->where('filter.filter_id', $filterId);
+            });
+        });
+
         $query->orderBy(
-            \App\Models\ProductTranslation::select('name')
+            ProductTranslation::select('name')
                 ->whereColumn('product_translations.product_id', 'products.id')
                 ->whereIn('locale', [$lang, 'uk'])
-                ->orderByRaw("locale = ? DESC", [$lang])
+                ->orderByRaw('locale = ? DESC', [$lang])
                 ->limit(1)
         );
 
         $products = $query->paginate(10)->withQueryString();
+        $filters  = Filter::pluck('filter_name', 'filter_id');
 
-        return view('product.index', compact('products', 'lang'));
+        return view('product.index', compact('products', 'lang', 'filters', 'filterId'));
     }
 
     public function create()
     {
-        return view('product.create');
+        $filters = Filter::pluck('filter_name', 'filter_id');
+
+        return view('product.create', compact('filters'));
     }
 
     public function store(ProductRequest $request)
@@ -60,21 +76,26 @@ class ProductController extends Controller
             'description' => $data['description'] ?? null,
         ]);
 
+        $product->filters()->sync($data['filters'] ?? []);
+
         return redirect()->route('product.index');
     }
 
     public function show(Product $product)
     {
-        $product->load('translations');
+        $product->load(['translations', 'filters']);
 
         return view('product.show', compact('product'));
     }
 
     public function edit(Product $product)
     {
-        $product->load('translations');
+        $product->load(['translations', 'filters']);
 
-        return view('product.edit', compact('product'));
+        $filters  = Filter::pluck('filter_name', 'filter_id');
+        $selected = $product->filters->pluck('filter_id')->all();
+
+        return view('product.edit', compact('product', 'filters', 'selected'));
     }
 
     public function update(ProductRequest $request, Product $product)
@@ -93,6 +114,8 @@ class ProductController extends Controller
                 'description' => $data['description'] ?? null,
             ]
         );
+
+        $product->filters()->sync($data['filters'] ?? []);
 
         return redirect()->route('product.index');
     }

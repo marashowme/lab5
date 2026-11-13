@@ -36,3 +36,20 @@
     <p style="color:red; margin:4px 0 0;">{{ $message }}</p>
     @enderror
 </div>
+
+<div style="margin-bottom: 15px;">
+    <label for="filters" style="display:block; font-weight:bold;">Мітки</label>
+    <select id="filters" name="filters[]" multiple style="width:100%;">
+        @foreach ($filters as $id => $name)
+            <option value="{{ $id }}" @selected(in_array($id, old('filters', $selected ?? [])))>
+                {{ $name }}
+            </option>
+        @endforeach
+    </select>
+    @error('filters')
+    <p style="color:red; margin:4px 0 0;">{{ $message }}</p>
+    @enderror
+    @error('filters.*')
+    <p style="color:red; margin:4px 0 0;">{{ $message }}</p>
+    @enderror
+</div>
