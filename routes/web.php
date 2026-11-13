@@ -14,6 +14,9 @@ Route::get('/', function () {
 Route::resource('country', CountryController::class);
 
 // Маршрути для магазину техніки (ваше індивідуальне)
+// Маршрут адміністрування ПЕРЕД resource, інакше /product/admin
+// буде сприйнято як /product/{product} (метод show)
+Route::get('/product/admin', [ProductController::class, 'admin'])->name('product.admin');
 Route::resource('product', ProductController::class);
 
 // Маршрути блогу

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Category; // або модель категорії, яка використовується у вас
 use App\Models\Filter;
 use App\Models\Product;
 use App\Models\ProductTranslation;
+use App\Queries\ProductFilter;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -52,6 +54,29 @@ class ProductController extends Controller
         $filters  = Filter::pluck('filter_name', 'filter_id');
 
         return view('product.index', compact('products', 'lang', 'filters', 'filterId'));
+    }
+
+    public function admin(Request $request, ProductFilter $filter)
+    {
+        $input = $request->validate([
+            'search'      => ['nullable', 'string', 'max:100'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'], // перевірте назву таблиці категорій
+            'filter_id'   => ['nullable', 'integer', 'exists:filter,filter_id'],
+            'sort'        => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $products = $filter->apply($input)
+            ->paginate(10)
+            ->withQueryString();
+
+        $lang = $request->query('lang', 'uk');
+
+        return view('product.admin', [
+            'products'   => $products,
+            'categories' => Category::orderBy('category_name')->pluck('category_name', 'id'),
+            'filters'    => Filter::orderBy('filter_name')->pluck('filter_name', 'filter_id'),
+            'lang'       => $lang,
+        ]);
     }
 
     public function create()
