@@ -10,15 +10,18 @@ Route::get('/', function () {
     return redirect()->route('product.index');
 });
 
-// Маршрути для країн (з лабораторної)
+// Маршрути для країн
 Route::resource('country', CountryController::class);
 
-// Маршрути для магазину техніки (ваше індивідуальне)
+// Маршрути для магазину техніки
+// Маршрут адміністрування ПЕРЕД resource, інакше /product/admin
+// буде сприйнято як /product/{product}
+Route::get('/product/admin', [ProductController::class, 'admin'])->name('product.admin');
 Route::resource('product', ProductController::class);
 
 // Маршрути блогу
 // Маршрут адміністрування ПЕРЕД resource, інакше /blog/admin
-// буде сприйнято як /blog/{blog} (метод show)
+// буде сприйнято як /blog/{blog}
 Route::get('/blog/admin', [BlogController::class, 'admin'])->name('blog.admin');
 Route::resource('blog', BlogController::class);
 
