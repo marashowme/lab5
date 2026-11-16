@@ -10,7 +10,7 @@ class ProductFilter
     private const SORTABLE = [
         'price'        => 'products.price',
         'quantity'     => 'products.quantity',
-        'categoryName' => 'category.category_name', // якщо є категорія товарів
+        'categoryName' => 'category.category_name',
         'created'      => 'products.created_at',
     ];
 
@@ -18,10 +18,10 @@ class ProductFilter
     {
         $query = Product::query()
             ->with(['translations', 'category', 'filters'])
-            ->leftJoin('categories', 'products.category_id', '=', 'categories.id') // адаптуйте під назву вашої таблиці категорій, якщо потрібно
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
             ->select('products.*');
 
-        // Пошук за назвою у перекладах (або за артикулом/іншим полем)
+        // Пошук за назвою у перекладах
         $query->when(
             $input['search'] ?? null,
             fn (Builder $q, $value) => $q->whereHas(
@@ -30,13 +30,13 @@ class ProductFilter
             )
         );
 
-        // Фільтрація за конкретною категорією (з випадаючого списку)
+        // Фільтрація за конкретною категорією
         $query->when(
             $input['category_id'] ?? null,
             fn (Builder $q, $value) => $q->where('products.category_id', $value)
         );
 
-        // Фільтрація за міткою (фільтром через зв'язок N:N)
+        // Фільтрація за міткою
         $query->when(
             $input['filter_id'] ?? null,
             fn (Builder $q, $value) => $q->whereHas(

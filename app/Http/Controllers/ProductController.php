@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductRequest;
-use App\Models\Category; // або модель категорії, яка використовується у вас
+use App\Models\Category;
 use App\Models\Filter;
 use App\Models\Product;
 use App\Models\ProductTranslation;
@@ -60,7 +60,7 @@ class ProductController extends Controller
     {
         $input = $request->validate([
             'search'      => ['nullable', 'string', 'max:100'],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'], // перевірте назву таблиці категорій
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'filter_id'   => ['nullable', 'integer', 'exists:filter,filter_id'],
             'sort'        => ['nullable', 'string', 'max:30'],
         ]);
