@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 
 class StatsController extends Controller
 {
+    public function index()
+    {
+        $totalHits = Tracker::count();
+        $totalVisitors = Tracker::distinct('ip')->count('ip');
+        $lastVisit = Tracker::max('visited_at');
+
+        return view('stats.index', compact('totalHits', 'totalVisitors', 'lastVisit'));
+    }
+
     public function pages(Request $request)
     {
         $type = $request->query('type', 'page');
